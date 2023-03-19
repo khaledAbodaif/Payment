@@ -21,6 +21,7 @@ Payment Helper of Payment Gateways ( PayPal - Paymob - Fawry - Thawani - WeAccep
 - [Opay](https://www.opaycheckout.com/)
 - [Paytabs](https://site.paytabs.com/)
 - [E Wallets (Vodafone Cash - Orange Money - Meza Wallet - Etisalat Cash)](https://paymob.com/)
+- Cash on delivery
 
 ## Installation
 
@@ -126,7 +127,7 @@ Route::get('/payments/verify/{payment?}',[FrontController::class,'payment_verify
 ## How To Use
 
 ```jsx
-use Khaleds\Payment\PaymobPayment;
+use Nafezly\Payments\PaymobPayment;
 
 $payment = new PaymobPayment();
 
@@ -171,10 +172,10 @@ $payment->verify($request);
 
 ```
 ### Factory Pattern Use
-you can pass only method name without payment key word like (Fawry,Paymob,Opay ...etc) 
+you can pass only method name without payment key word like (Fawry,Paymob,Opay ...etc)
 and the factory will return the payment instance for you , use it as you want ;)
 ```php
-    $payment = new \Khaleds\Payment\Factories\PaymentFactory();
+    $payment = new \Nafezly\Payments\Factories\PaymentFactory();
     $payment=$payment->get(string $paymentName)->pay(
 	$amount, 
 	$user_id = null, 
@@ -190,22 +191,81 @@ and the factory will return the payment instance for you , use it as you want ;)
 
 ```php
 
-use Khaleds\Payment\Classes\FawryPayment;
-use Khaleds\Payment\Classes\HyperPayPayment;
-use Khaleds\Payment\Classes\KashierPayment;
-use Khaleds\Payment\Classes\PaymobPayment;
-use Khaleds\Payment\Classes\PayPalPayment;
-use Khaleds\Payment\Classes\ThawaniPayment;
-use Khaleds\Payment\Classes\TapPayment;
-use Khaleds\Payment\Classes\OpayPayment;
-use Khaleds\Payment\Classes\PaytabsPayment;
-use Khaleds\Payment\Classes\PaymobWalletPayment;
+use Nafezly\Payments\Classes\FawryPayment;
+use Nafezly\Payments\Classes\HyperPayPayment;
+use Nafezly\Payments\Classes\KashierPayment;
+use Nafezly\Payments\Classes\PaymobPayment;
+use Nafezly\Payments\Classes\PayPalPayment;
+use Nafezly\Payments\Classes\ThawaniPayment;
+use Nafezly\Payments\Classes\TapPayment;
+use Nafezly\Payments\Classes\OpayPayment;
+use Nafezly\Payments\Classes\PaytabsPayment;
+use Nafezly\Payments\Classes\PaymobWalletPayment;
 ```
 
 ### Payment Methods
 you can now have all of this payments as a crud !!
 the table contain (method,name,color,description,icon,is_active) so you can create your own dashboard crud to manage which one active or not and if there is an api functionality you can send this crud where they are active and return back for you the selected method so you can use the factory way directly.
 **pass the method to factory -> pay done you have the response data :)**
+
+## Cash On Delivery Method
+there is a new payment method called CashOnDelivery you can use it in factory pattern
+but with some changes
+```php
+    $payment = new \Nafezly\Payments\Factories\PaymentFactory();
+    $payment=$payment->get(string $paymentName)
+    ->setRequest(array $request)
+    ->setBuyerModel(Model $buyer)
+    ->pay()
+    
+    // for response 
+    $payment->respone
+```
+## why this changes on this method
+
+### Feature 1
+
+now you have DTO for response
+```php
+    public bool $status = true;
+    public string $message = '';
+    public array $data=[];
+    public array $request=[];
+    public NafezlyPayment $payment;
+    public string $payment_id = '';
+    public View|null $html = null;
+    public string $redirect_url = '';
+    public array $errors = [];
+```
+after this payment used you can check for the status boolean to do your actions next
+if the status false you will find the error message contain the error and errors array will contain for example the validation errors
+### Feature 2
+now you have a payments table and payment logs table when you us pay function
+the record will store into payments table with status UNPAID this table is a morph
+
+
+| column | description |
+|--|--|
+| model_id | the buyer id |
+| model_type | the buyer table |
+| order_id | the id that you user paid for |
+| order_type | the table name (orders,service,plans ..etc) |
+| payment_method | the method name |
+| payment_status| PAID -- UNPAID |
+| transaction_code| unique code |
+| amount	| float number |
+| notes	| nullable notes |
+
+and when you use verfiy the status will change to PAID
+
+when any something went wrong the request and response will be saved into payment_logs table
+```php
+    //don't forget 
+    php artisan migrate 
+```
+### Feature 3 (Extendability)
+if there is a new payment implement IPaymentInterface use the traits and your logic
+and done you have a payment with all of this functionalities ;)
 ## Test Cards
 
 - [Thawani](https://docs.thawani.om/docs/thawani-ecommerce-api/ZG9jOjEyMTU2Mjc3-thawani-test-card)
