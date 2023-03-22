@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('description')->nullable();
             $table->string('color')->nullable();
             $table->string('icon')->nullable();
-            $table->boolean('is_active')->default(1);
+            $table->boolean('is_active')->default(0);
 
             $table->timestamps();
         });
