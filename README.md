@@ -27,8 +27,16 @@ Payment Helper of Payment Gateways ( PayPal - Paymob - Fawry - Thawani - WeAccep
 
 ```jsx
 composer require nafezly/payments
-```
 
+php artisan migrate
+
+```
+Add this to your DatabaseSeeder run method
+```php
+use Khaleds\Payment\Seeders\PaymentMethodsTableSeeder;
+
+        $this->call(PaymentMethodsTableSeeder::class);
+````
 ## Publish Vendor Files
 
 ```jsx
@@ -124,106 +132,41 @@ return [
 Route::get('/payments/verify/{payment?}',[FrontController::class,'payment_verify'])->name('payment-verify');
 ```
 
-## How To Use
-
-```jsx
-use Nafezly\Payments\PaymobPayment;
-
-$payment = new PaymobPayment();
-
-//pay function
-$payment->pay(
-	$amount, 
-	$user_id = null, 
-	$user_first_name = null, 
-	$user_last_name = null, 
-	$user_email = null, 
-	$user_phone = null, 
-	$source = null
-);
-
-//or use
-$payment->setUserId($id)
-        ->setUserFirstName($first_name)
-        ->setUserLastName($last_name)
-        ->setUserEmail($email)
-        ->setUserPhone($phone)
-        ->setCurrency($currency)
-        ->setAmount($amount)
-        ->pay();
-
-//pay function response 
-[
-	'payment_id'=>"", // refrence code that should stored in your orders table
-	'redirect_url'=>"", // redirect url available for some payment gateways
-	'html'=>"" // rendered html available for some payment gateways
-]
-
-//verify function
-$payment->verify($request);
-
-//outputs
-[
-	'success'=>true,//or false
-    'payment_id'=>"PID",
-	'message'=>"Done Successfully",//message for client
-	'process_data'=>""//payment response
-]
-
-```
-### Factory Pattern Use
-you can pass only method name without payment key word like (Fawry,Paymob,Opay ...etc)
-and the factory will return the payment instance for you , use it as you want ;)
-```php
-    $payment = new \Nafezly\Payments\Factories\PaymentFactory();
-    $payment=$payment->get(string $paymentName)->pay(
-	$amount, 
-	$user_id = null, 
-	$user_first_name = null, 
-	$user_last_name = null, 
-	$user_email = null, 
-	$user_phone = null, 
-	$source = null
-);;
-```
-
-## Available Classes
-
-```php
-
-use Nafezly\Payments\Classes\FawryPayment;
-use Nafezly\Payments\Classes\HyperPayPayment;
-use Nafezly\Payments\Classes\KashierPayment;
-use Nafezly\Payments\Classes\PaymobPayment;
-use Nafezly\Payments\Classes\PayPalPayment;
-use Nafezly\Payments\Classes\ThawaniPayment;
-use Nafezly\Payments\Classes\TapPayment;
-use Nafezly\Payments\Classes\OpayPayment;
-use Nafezly\Payments\Classes\PaytabsPayment;
-use Nafezly\Payments\Classes\PaymobWalletPayment;
-```
 
 ### Payment Methods
 you can now have all of this payments as a crud !!
 the table contain (method,name,color,description,icon,is_active) so you can create your own dashboard crud to manage which one active or not and if there is an api functionality you can send this crud where they are active and return back for you the selected method so you can use the factory way directly.
 **pass the method to factory -> pay done you have the response data :)**
 
-## Cash On Delivery Method
-there is a new payment method called CashOnDelivery you can use it in factory pattern
-but with some changes
-```php
-    $payment = new \Nafezly\Payments\Factories\PaymentFactory();
-    $payment=$payment->get(string $paymentName)
-    ->setRequest(array $request)
-    ->setBuyerModel(Model $buyer)
-    ->pay()
-    
-    // for response 
-    $payment->respone
-```
-## why this changes on this method
 
-### Feature 1
+## How To Use
+you can pass only method name without payment key word like (Fawry,Paymob,Opay ...etc)
+or  use an api that the user choose which method he wanted and pass it .
+```jsx
+ $payment = new \Nafezly\Payments\Factories\PaymentFactory();
+$payment=$payment->get(string $paymentName)
+// the required data
+->setRequest(array $request)
+// user model (user , account , vendore etc...)
+->setBuyerModel(Model $buyer)
+->pay()
+
+
+//verify
+
+$payment = new \Nafezly\Payments\Factories\PaymentFactory();
+$payment=$payment->get(string $paymentName)
+// the required data
+->setRequest(array $request)
+// user model (user , account , vendore etc...)
+->setBuyerModel(Model $buyer)
+->verify()
+
+```
+
+
+
+### Response
 
 now you have DTO for response
 ```php
@@ -237,9 +180,10 @@ now you have DTO for response
     public string $redirect_url = '';
     public array $errors = [];
 ```
-after this payment used you can check for the status boolean to do your actions next
+ you can check for the status boolean to do your actions next
 if the status false you will find the error message contain the error and errors array will contain for example the validation errors
-### Feature 2
+
+### Payments Table
 now you have a payments table and payment logs table when you us pay function
 the record will store into payments table with status UNPAID this table is a morph
 
@@ -256,16 +200,11 @@ the record will store into payments table with status UNPAID this table is a mor
 | amount	| float number |
 | notes	| nullable notes |
 
-and when you use verfiy the status will change to PAID
+and when you use verify the status will change to PAID
 
 when any something went wrong the request and response will be saved into payment_logs table
-```php
-    //don't forget 
-    php artisan migrate 
-```
-### Feature 3 (Extendability)
-if there is a new payment implement IPaymentInterface use the traits and your logic
-and done you have a payment with all of this functionalities ;)
+
+
 ## Test Cards
 
 - [Thawani](https://docs.thawani.om/docs/thawani-ecommerce-api/ZG9jOjEyMTU2Mjc3-thawani-test-card)
@@ -276,3 +215,6 @@ and done you have a payment with all of this functionalities ;)
 - [Opay](https://doc.opaycheckout.com/end-to-end-testing)
 - [PayTabs](https://support.paytabs.com/en/support/solutions/articles/60000712315-what-are-the-test-cards-available-to-perform-payments-)
 
+# Credits
+
+- [Nafezly](https://github.com/Nafezly/payments)
